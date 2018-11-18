@@ -1,13 +1,18 @@
-import tensorflow as tf
+import os
+import sys
+
 import numpy as np
-import cv2
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
 
-import sys
-sys.path.append('cityscapesScripts')
+import tensorflow as tf
+import cv2
 
+
+sys.path.append(os.path.join(os.path.dirname(__file__),
+                             'cityscapesScripts'))
 from cityscapesscripts.helpers import labels
+
 
 class DeeplabModel():
     INPUT_TENSOR_NAME = 'ImageTensor:0'
@@ -37,14 +42,14 @@ class DeeplabModel():
         target_size = (int(resize_ratio * height), int(resize_ratio * width))
         resized_image = cv2.resize(image, target_size)
 
-        cv2.imshow("resized", resized_image)
+        # cv2.imshow("resized", resized_image)
         batch_seg_map = self.sess.run(
             self.OUTPUT_TENSOR_NAME,
             feed_dict={self.INPUT_TENSOR_NAME: [resized_image]})
         seg_map = batch_seg_map[0]
 
         result_image = cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB)
-        
+
         return result_image, seg_map
 
     def inference_path(self, image_path):
@@ -56,7 +61,7 @@ class DeeplabModel():
 
 def create_pascal_label_colormap():
     """Creates a label colormap used in PASCAL VOC segmentation benchmark.
-    
+
     Returns:
     A Colormap for visualizing segmentation results.
     """
@@ -73,7 +78,7 @@ def create_pascal_label_colormap():
 
 def label_to_color_image(input_label):
     """Adds color defined by the dataset colormap to the label.
-    
+
     Args:
     label: A 2D array with integer type, storing the segmentation label.
 
@@ -90,7 +95,8 @@ def label_to_color_image(input_label):
         raise ValueError('Expect 2-D input label')
 
     # colormap = create_pascal_label_colormap()
-    colormap = np.asarray([list(label.color) for label in labels.trainId2label.values()])
+    colormap = np.asarray([list(label.color)
+                           for label in labels.trainId2label.values()])
 
     if np.max(input_label) >= len(colormap):
         raise ValueError('label value too large.')
@@ -99,6 +105,7 @@ def label_to_color_image(input_label):
 
 
 output_index = 0
+
 
 def vis_segmentation(image, seg_map):
     """Visualizes input image, segmentation map and overlay view."""
@@ -136,7 +143,9 @@ def vis_segmentation(image, seg_map):
     plt.savefig('{:06d}.png'.format(output_index))
     output_index += 1
 
-LABEL_NAMES = np.asarray([label.name for label in labels.trainId2label.values()])
+
+LABEL_NAMES = np.asarray(
+    [label.name for label in labels.trainId2label.values()])
 FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
 FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
 
@@ -160,6 +169,7 @@ def main():
         image, segmap = model.inference_path(image_file)
 
         vis_segmentation(image, segmap)
+
 
 if __name__ == "__main__":
     main()
